@@ -17,7 +17,7 @@ const nav = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { items, openCart } = useCart();
   const { count: wishlistCount } = useWishlist();
   const count = items.reduce((s, i) => s + i.qty, 0);
@@ -51,6 +51,14 @@ export function Navbar() {
                 {n.label}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="rounded-full bg-electric/15 px-3 py-1 text-xs font-bold text-electric transition-colors hover:bg-electric/25"
+              >
+                Admin CMS
+              </Link>
+            )}
           </nav>
 
           {/* Right Utilities */}

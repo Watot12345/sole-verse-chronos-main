@@ -30,6 +30,7 @@ function LoginPage() {
 
   const [tab, setTab] = useState<"signin" | "signup">(search.mode ?? "signin");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Sign In state
   const [loginEmail, setLoginEmail] = useState("");
@@ -56,41 +57,51 @@ function LoginPage() {
     }
   }, [isHydrated, isAuthenticated, navigate, redirectTarget]);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const res = signIn(loginEmail, loginPassword);
-    if (!res.ok) {
-      setError(res.error ?? "Unable to sign in.");
-      return;
+    setSubmitting(true);
+    try {
+      const res = await signIn(loginEmail, loginPassword);
+      if (!res.ok) {
+        setError(res.error ?? "Unable to sign in.");
+        return;
+      }
+      void navigate({ to: redirectTarget as "/shop" });
+    } finally {
+      setSubmitting(false);
     }
-    void navigate({ to: redirectTarget as "/shop" });
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
-    const res = signUp({
-      fullName,
-      email,
-      password,
-      phone,
-      country,
-      address,
-      apartment,
-      city,
-      state,
-      zip,
-    });
-    if (!res.ok) {
-      setError(res.error ?? "Unable to create account.");
-      return;
+    setSubmitting(true);
+    try {
+      const res = await signUp({
+        fullName,
+        email,
+        password,
+        phone,
+        country,
+        address,
+        apartment,
+        city,
+        state,
+        zip,
+      });
+      if (!res.ok) {
+        setError(res.error ?? "Unable to create account.");
+        return;
+      }
+      void navigate({ to: redirectTarget as "/shop" });
+    } finally {
+      setSubmitting(false);
     }
-    void navigate({ to: redirectTarget as "/shop" });
   };
 
   const fillDemo = () => {

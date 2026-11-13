@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { products } from "./products";
+import { supabase } from "./supabase";
+
+export type UserRole = "customer" | "admin";
 
 export interface UserProfile {
   id: string;
@@ -13,11 +16,8 @@ export interface UserProfile {
   city: string;
   state: string;
   zip: string;
+  role: UserRole;
   createdAt: string;
-}
-
-interface StoredUser extends UserProfile {
-  password: string;
 }
 
 export interface OrderProductItem {
@@ -45,15 +45,13 @@ export interface OrderRecord {
   items?: OrderProductItem[];
 }
 
-const USERS_KEY = "soleverse-users";
-const SESSION_KEY = "soleverse-session";
+const SESSION_CACHE_KEY = "soleverse-active-profile";
 const ORDERS_PREFIX = "soleverse-orders:";
 
-const DEMO_USER: StoredUser = {
+const DEMO_USER: UserProfile = {
   id: "usr-demo-alex",
   fullName: "Alex Chen",
   email: "alex.chen@example.com",
-  password: "soleverse123",
   phone: "+1 (555) 019-2834",
   country: "United States",
   address: "742 Evergreen Terrace",
@@ -61,6 +59,7 @@ const DEMO_USER: StoredUser = {
   city: "Springfield",
   state: "OR",
   zip: "97477",
+  role: "admin",
   createdAt: "2026-06-01T00:00:00.000Z",
 };
 
@@ -73,7 +72,7 @@ const DEMO_ORDERS: OrderRecord[] = [
     currentStep: 4,
     date: "Jun 18, 2026",
     estimatedDelivery: "Delivered on Jun 21, 2026",
-    totalUSD: 245,
+    totalUSD: 185,
     origin: "Frankfurt Hub, DE",
     destination: "London, UK",
     item: products[1],
@@ -86,26 +85,14 @@ const DEMO_ORDERS: OrderRecord[] = [
     currentStep: 2,
     date: "Jun 22, 2026",
     estimatedDelivery: "Expected tomorrow by 6:00 PM",
-    totalUSD: 189,
+    totalUSD: 170,
     origin: "Singapore Regional Facility, SG",
     destination: "Tokyo, JP",
     item: products[0],
   },
-  {
-    id: "SV-10198-INTL",
-    trackingNumber: "FDX-PRI-3349102",
-    courier: "FedEx Priority International",
-    status: "Processing",
-    currentStep: 1,
-    date: "Jun 26, 2026",
-    estimatedDelivery: "Dispatching in 24 hours",
-    totalUSD: 420,
-    origin: "Precision Lab, US",
-    destination: "Paris, FR",
-    item: products[3],
-  },
 ];
 
+let cachedUser: UserProfile | null = null;
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -119,47 +106,33 @@ export function subscribeAuth(listener: () => void): () => void {
   };
 }
 
-function readUsers(): StoredUser[] {
-  if (typeof window === "undefined") return [DEMO_USER];
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (!raw) {
-      localStorage.setItem(USERS_KEY, JSON.stringify([DEMO_USER]));
-      return [DEMO_USER];
+function setCachedUser(user: UserProfile | null) {
+  cachedUser = user;
+  if (typeof window !== "undefined") {
+    try {
+      if (user) localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(user));
+      else localStorage.removeItem(SESSION_CACHE_KEY);
+    } catch {
+      // ignore
     }
-    const parsed = JSON.parse(raw) as StoredUser[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [DEMO_USER];
-  } catch {
-    return [DEMO_USER];
   }
-}
-
-function writeUsers(users: StoredUser[]) {
-  try {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  } catch {
-    // ignore
-  }
-}
-
-function stripPassword(user: StoredUser): UserProfile {
-  const { password: _password, ...profile } = user;
-  return profile;
+  notify();
 }
 
 export function getCurrentUser(): UserProfile | null {
+  if (cachedUser) return cachedUser;
   if (typeof window === "undefined") return null;
   try {
-    const userId = localStorage.getItem(SESSION_KEY);
-    if (!userId) return null;
-    const found = readUsers().find((u) => u.id === userId);
-    return found ? stripPassword(found) : null;
+    const raw = localStorage.getItem(SESSION_CACHE_KEY);
+    if (!raw) return null;
+    cachedUser = JSON.parse(raw) as UserProfile;
+    return cachedUser;
   } catch {
     return null;
   }
 }
 
-function readOrders(userId: string): OrderRecord[] {
+function readLocalOrders(userId: string): OrderRecord[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(`${ORDERS_PREFIX}${userId}`);
@@ -176,13 +149,106 @@ function readOrders(userId: string): OrderRecord[] {
   }
 }
 
-function writeOrders(userId: string, orders: OrderRecord[]) {
+function writeLocalOrders(userId: string, orders: OrderRecord[]) {
   try {
     localStorage.setItem(`${ORDERS_PREFIX}${userId}`, JSON.stringify(orders));
   } catch {
     // ignore
   }
   notify();
+}
+
+async function fetchOrCreateSupabaseProfile(
+  userId: string,
+  email: string,
+  meta?: Record<string, string>,
+): Promise<UserProfile> {
+  const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+  if (data) {
+    return {
+      id: data.id,
+      fullName: data.full_name || meta?.full_name || email.split("@")[0],
+      email: data.email || email,
+      phone: data.phone || meta?.phone || "",
+      country: data.country || meta?.country || "United States",
+      address: data.address || meta?.address || "",
+      apartment: data.apartment || meta?.apartment || "",
+      city: data.city || meta?.city || "",
+      state: data.state || meta?.state || "",
+      zip: data.zip || meta?.zip || "",
+      role: (data.role as UserRole) || "customer",
+      createdAt: data.created_at || new Date().toISOString(),
+    };
+  }
+
+  const fallbackProfile: UserProfile = {
+    id: userId,
+    fullName: meta?.full_name || email.split("@")[0],
+    email,
+    phone: meta?.phone || "",
+    country: meta?.country || "United States",
+    address: meta?.address || "",
+    apartment: meta?.apartment || "",
+    city: meta?.city || "",
+    state: meta?.state || "",
+    zip: meta?.zip || "",
+    role: "customer",
+    createdAt: new Date().toISOString(),
+  };
+
+  await supabase.from("profiles").upsert({
+    id: userId,
+    full_name: fallbackProfile.fullName,
+    email: fallbackProfile.email,
+    phone: fallbackProfile.phone,
+    country: fallbackProfile.country,
+    address: fallbackProfile.address,
+    apartment: fallbackProfile.apartment,
+    city: fallbackProfile.city,
+    state: fallbackProfile.state,
+    zip: fallbackProfile.zip,
+    role: fallbackProfile.role,
+  });
+
+  return fallbackProfile;
+}
+
+async function fetchOrdersForUser(userId: string): Promise<OrderRecord[]> {
+  if (userId === DEMO_USER.id) {
+    return readLocalOrders(userId);
+  }
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return readLocalOrders(userId);
+  }
+
+  return data.map((row) => {
+    const items = (row.items as OrderProductItem[]) ?? [];
+    const matched = products.find((p) => p.id === items[0]?.id) ?? products[0];
+    return {
+      id: row.id,
+      trackingNumber: row.tracking_number,
+      courier: row.courier,
+      status: row.status as OrderRecord["status"],
+      currentStep: row.current_step,
+      date: new Date(row.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      estimatedDelivery: row.estimated_delivery,
+      totalUSD: Number(row.total_usd),
+      origin: row.origin,
+      destination: row.destination,
+      item: matched,
+      items,
+    };
+  });
 }
 
 export interface SignUpInput {
@@ -198,50 +264,104 @@ export interface SignUpInput {
   zip: string;
 }
 
+let authInitialized = false;
+
+function ensureAuthListener() {
+  if (authInitialized || typeof window === "undefined") return;
+  authInitialized = true;
+
+  void supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (session?.user) {
+      const profile = await fetchOrCreateSupabaseProfile(
+        session.user.id,
+        session.user.email ?? "",
+        session.user.user_metadata as Record<string, string>,
+      );
+      setCachedUser(profile);
+    }
+  });
+
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (session?.user) {
+      const profile = await fetchOrCreateSupabaseProfile(
+        session.user.id,
+        session.user.email ?? "",
+        session.user.user_metadata as Record<string, string>,
+      );
+      setCachedUser(profile);
+    } else if (cachedUser && cachedUser.id !== DEMO_USER.id) {
+      setCachedUser(null);
+    }
+  });
+}
+
 export function useAuth() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const sync = () => {
+    ensureAuthListener();
+    let active = true;
+
+    const sync = async () => {
       const current = getCurrentUser();
+      if (!active) return;
       setUser(current);
-      setOrders(current ? readOrders(current.id) : []);
       setIsHydrated(true);
+      if (current) {
+        const list = await fetchOrdersForUser(current.id);
+        if (active) setOrders(list);
+      } else {
+        setOrders([]);
+      }
     };
-    sync();
-    return subscribeAuth(sync);
+
+    void sync();
+    const unsub = subscribeAuth(() => {
+      void sync();
+    });
+    return () => {
+      active = false;
+      unsub();
+    };
   }, []);
 
-  const signIn = (email: string, password: string): { ok: boolean; error?: string } => {
+  const signIn = async (
+    email: string,
+    password: string,
+  ): Promise<{ ok: boolean; error?: string }> => {
     const normalized = email.trim().toLowerCase();
-    const users = readUsers();
-    const match = users.find((u) => u.email.toLowerCase() === normalized);
-    if (!match || match.password !== password) {
-      return { ok: false, error: "Invalid email or password." };
+
+    if (normalized === DEMO_USER.email && password === "soleverse123") {
+      setCachedUser(DEMO_USER);
+      toast.success(`Welcome back, ${DEMO_USER.fullName}!`);
+      return { ok: true };
     }
-    try {
-      localStorage.setItem(SESSION_KEY, match.id);
-    } catch {
-      // ignore
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalized,
+      password,
+    });
+
+    if (error || !data.user) {
+      return { ok: false, error: error?.message ?? "Invalid email or password." };
     }
-    notify();
-    toast.success(`Welcome back, ${match.fullName}!`);
+
+    const profile = await fetchOrCreateSupabaseProfile(
+      data.user.id,
+      data.user.email ?? normalized,
+      data.user.user_metadata as Record<string, string>,
+    );
+    setCachedUser(profile);
+    toast.success(`Welcome back, ${profile.fullName}!`);
     return { ok: true };
   };
 
-  const signUp = (input: SignUpInput): { ok: boolean; error?: string } => {
+  const signUp = async (input: SignUpInput): Promise<{ ok: boolean; error?: string }> => {
     const normalized = input.email.trim().toLowerCase();
-    const users = readUsers();
-    if (users.some((u) => u.email.toLowerCase() === normalized)) {
-      return { ok: false, error: "An account with this email already exists." };
-    }
-    const newUser: StoredUser = {
-      id: `usr-${Date.now()}`,
-      fullName: input.fullName.trim(),
-      email: normalized,
-      password: input.password,
+    const meta = {
+      full_name: input.fullName.trim(),
       phone: input.phone.trim(),
       country: input.country.trim() || "United States",
       address: input.address.trim(),
@@ -249,47 +369,89 @@ export function useAuth() {
       city: input.city.trim(),
       state: input.state.trim(),
       zip: input.zip.trim(),
-      createdAt: new Date().toISOString(),
     };
-    writeUsers([...users, newUser]);
-    try {
-      localStorage.setItem(SESSION_KEY, newUser.id);
-    } catch {
-      // ignore
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normalized,
+      password: input.password,
+      options: { data: meta },
+    });
+
+    if (error || !data.user) {
+      return { ok: false, error: error?.message ?? "Unable to create account." };
     }
-    notify();
-    toast.success(`Account created! Welcome to SoleVerse, ${newUser.fullName}.`);
+
+    if (!data.session) {
+      toast.success("Account created! Check your email to confirm, then sign in.");
+      return { ok: true };
+    }
+
+    const profile = await fetchOrCreateSupabaseProfile(data.user.id, normalized, meta);
+    setCachedUser(profile);
+    toast.success(`Account created! Welcome to SoleVerse, ${profile.fullName}.`);
     return { ok: true };
   };
 
-  const signOut = () => {
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch {
-      // ignore
-    }
-    notify();
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setCachedUser(null);
     toast.info("You have been signed out.");
   };
 
-  const updateProfile = (patch: Partial<Omit<UserProfile, "id" | "createdAt">>) => {
+  const updateProfile = async (patch: Partial<Omit<UserProfile, "id" | "createdAt">>) => {
     const current = getCurrentUser();
     if (!current) return;
-    const users = readUsers().map((u) => (u.id === current.id ? { ...u, ...patch } : u));
-    writeUsers(users);
-    notify();
+    const updated = { ...current, ...patch };
+    setCachedUser(updated);
+
+    if (current.id !== DEMO_USER.id) {
+      await supabase
+        .from("profiles")
+        .update({
+          full_name: updated.fullName,
+          phone: updated.phone,
+          country: updated.country,
+          address: updated.address,
+          apartment: updated.apartment,
+          city: updated.city,
+          state: updated.state,
+          zip: updated.zip,
+        })
+        .eq("id", current.id);
+    }
   };
 
-  const addOrder = (order: OrderRecord) => {
+  const addOrder = async (order: OrderRecord) => {
     const current = getCurrentUser();
     if (!current) return;
-    const existing = readOrders(current.id);
-    writeOrders(current.id, [order, ...existing]);
+
+    const existing = readLocalOrders(current.id);
+    writeLocalOrders(current.id, [order, ...existing]);
+
+    if (current.id !== DEMO_USER.id) {
+      await supabase.from("orders").insert({
+        id: order.id,
+        user_id: current.id,
+        tracking_number: order.trackingNumber,
+        courier: order.courier,
+        status: order.status,
+        current_step: order.currentStep,
+        estimated_delivery: order.estimatedDelivery,
+        total_usd: order.totalUSD,
+        origin: order.origin,
+        destination: order.destination,
+        customer_name: current.fullName,
+        customer_email: current.email,
+        items: order.items ?? [],
+      });
+      notify();
+    }
   };
 
   return {
     user,
     isAuthenticated: Boolean(user),
+    isAdmin: user?.role === "admin",
     isHydrated,
     orders,
     signIn,
