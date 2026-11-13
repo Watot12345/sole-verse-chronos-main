@@ -30,6 +30,22 @@ const IMG_NB_550 =
   "https://images.unsplash.com/photo-1621315271772-28b1f3a5df87?auto=format&fit=crop&w=900&q=80";
 const IMG_NB_990 =
   "https://images.unsplash.com/photo-1643541323850-14dc38b00c12?auto=format&fit=crop&w=900&q=80";
+const IMG_DUNK_PANDA =
+  "https://images.unsplash.com/photo-1623684225794-a8f1f5037f5c?auto=format&fit=crop&w=900&q=80";
+const IMG_JORDAN_CHICAGO =
+  "https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=900&q=80";
+const IMG_JORDAN_SHADOW =
+  "https://images.unsplash.com/photo-1567294999233-9cc7febb83b9?auto=format&fit=crop&w=900&q=80";
+const IMG_DUNK_RED =
+  "https://images.unsplash.com/photo-1600181516264-3ea807ff44b9?auto=format&fit=crop&w=900&q=80";
+const IMG_NIKE_PEGASUS =
+  "https://images.unsplash.com/photo-1571008887538-b36bb32f4571?auto=format&fit=crop&w=900&q=80";
+const IMG_ADIDAS_GAZELLE =
+  "https://images.unsplash.com/photo-1700853012811-ce0a42d2b6d3?auto=format&fit=crop&w=900&q=80";
+const IMG_PUMA_SUEDE =
+  "https://images.unsplash.com/photo-1509442233604-131901ff8d40?auto=format&fit=crop&w=900&q=80";
+const IMG_PUMA_RSX =
+  "https://images.unsplash.com/photo-1750270438660-f57de76532cc?auto=format&fit=crop&w=900&q=80";
 
 export const products: Product[] = [
   {
@@ -142,6 +158,118 @@ export const products: Product[] = [
     altImage: IMG_NIKE_AF1,
     colors: ["#ffffff", "#0a0a0a"],
     inStock: false,
+  },
+  {
+    id: "nike-dunk-low-panda",
+    name: "Nike Dunk Low Retro 'Panda'",
+    brand: "Nike",
+    category: "Casual",
+    price: 115,
+    rating: 4.9,
+    reviews: 845,
+    image: IMG_DUNK_PANDA,
+    altImage: IMG_NIKE_AF1,
+    colors: ["#0a0a0a", "#ffffff"],
+    badge: "Bestseller",
+    inStock: true,
+  },
+  {
+    id: "jordan-1-mid-chicago",
+    name: "Air Jordan 1 Mid 'Chicago'",
+    brand: "Jordan",
+    category: "Basketball",
+    price: 135,
+    rating: 4.8,
+    reviews: 418,
+    image: IMG_JORDAN_CHICAGO,
+    altImage: IMG_JORDAN_1,
+    colors: ["#ef4444", "#ffffff", "#0a0a0a"],
+    badge: "Hot",
+    inStock: true,
+  },
+  {
+    id: "nike-pegasus-41",
+    name: "Nike Air Zoom Pegasus 41",
+    brand: "Nike",
+    category: "Running",
+    price: 140,
+    originalPrice: 160,
+    rating: 4.7,
+    reviews: 276,
+    image: IMG_NIKE_PEGASUS,
+    altImage: IMG_NIKE_RUNNING,
+    colors: ["#0a0a0a", "#3b82f6"],
+    badge: "New",
+    inStock: true,
+  },
+  {
+    id: "adidas-gazelle-bold",
+    name: "Adidas Gazelle Bold",
+    brand: "Adidas",
+    category: "Lifestyle",
+    price: 120,
+    rating: 4.8,
+    reviews: 304,
+    image: IMG_ADIDAS_GAZELLE,
+    altImage: IMG_NB_574,
+    colors: ["#ffffff", "#10b981"],
+    inStock: true,
+  },
+  {
+    id: "puma-rs-x-efekt",
+    name: "Puma RS-X Efekt",
+    brand: "Puma",
+    category: "Training",
+    price: 115,
+    originalPrice: 135,
+    rating: 4.6,
+    reviews: 163,
+    image: IMG_PUMA_RSX,
+    altImage: IMG_ADIDAS_BOOST,
+    colors: ["#3b82f6", "#ffffff", "#f97316"],
+    inStock: true,
+  },
+  {
+    id: "puma-suede-classic",
+    name: "Puma Suede Classic XXI",
+    brand: "Puma",
+    category: "Casual",
+    price: 75,
+    rating: 4.7,
+    reviews: 389,
+    image: IMG_PUMA_SUEDE,
+    altImage: IMG_DUNK_PANDA,
+    colors: ["#0a0a0a", "#ffffff"],
+    inStock: true,
+  },
+  {
+    id: "nike-dunk-university-red",
+    name: "Nike Dunk Low 'University Red'",
+    brand: "Nike",
+    category: "Limited Edition",
+    price: 155,
+    originalPrice: 180,
+    rating: 4.9,
+    reviews: 214,
+    image: IMG_DUNK_RED,
+    altImage: IMG_JORDAN_CHICAGO,
+    colors: ["#ef4444", "#ffffff"],
+    badge: "Limited",
+    inStock: true,
+  },
+  {
+    id: "jordan-1-shadow-2",
+    name: "Air Jordan 1 High 'Shadow 2.0'",
+    brand: "Jordan",
+    category: "Limited Edition",
+    price: 240,
+    rating: 4.9,
+    reviews: 195,
+    image: IMG_JORDAN_SHADOW,
+    altImage: IMG_JORDAN_1,
+    colors: ["#0a0a0a", "#c0c0c0"],
+    badge: "Limited",
+    inStock: true,
   },
 ];
 
