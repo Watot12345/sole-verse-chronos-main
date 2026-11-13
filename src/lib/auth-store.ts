@@ -48,50 +48,6 @@ export interface OrderRecord {
 const SESSION_CACHE_KEY = "soleverse-active-profile";
 const ORDERS_PREFIX = "soleverse-orders:";
 
-const DEMO_USER: UserProfile = {
-  id: "usr-demo-alex",
-  fullName: "Alex Chen",
-  email: "alex.chen@example.com",
-  phone: "+1 (555) 019-2834",
-  country: "United States",
-  address: "742 Evergreen Terrace",
-  apartment: "Apt 4B",
-  city: "Springfield",
-  state: "OR",
-  zip: "97477",
-  role: "admin",
-  createdAt: "2026-06-01T00:00:00.000Z",
-};
-
-const DEMO_ORDERS: OrderRecord[] = [
-  {
-    id: "SV-10248-INTL",
-    trackingNumber: "DHL-EXP-8849201",
-    courier: "DHL Express Worldwide",
-    status: "Delivered",
-    currentStep: 4,
-    date: "Jun 18, 2026",
-    estimatedDelivery: "Delivered on Jun 21, 2026",
-    totalUSD: 185,
-    origin: "Frankfurt Hub, DE",
-    destination: "London, UK",
-    item: products[1],
-  },
-  {
-    id: "SV-10231-INTL",
-    trackingNumber: "DHL-EXP-9923144",
-    courier: "DHL Express Worldwide",
-    status: "In Transit",
-    currentStep: 2,
-    date: "Jun 22, 2026",
-    estimatedDelivery: "Expected tomorrow by 6:00 PM",
-    totalUSD: 170,
-    origin: "Singapore Regional Facility, SG",
-    destination: "Tokyo, JP",
-    item: products[0],
-  },
-];
-
 let cachedUser: UserProfile | null = null;
 const listeners = new Set<() => void>();
 
@@ -136,14 +92,7 @@ function readLocalOrders(userId: string): OrderRecord[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(`${ORDERS_PREFIX}${userId}`);
-    if (!raw) {
-      if (userId === DEMO_USER.id) {
-        localStorage.setItem(`${ORDERS_PREFIX}${userId}`, JSON.stringify(DEMO_ORDERS));
-        return DEMO_ORDERS;
-      }
-      return [];
-    }
-    return JSON.parse(raw) as OrderRecord[];
+    return raw ? (JSON.parse(raw) as OrderRecord[]) : [];
   } catch {
     return [];
   }
@@ -214,9 +163,6 @@ async function fetchOrCreateSupabaseProfile(
 }
 
 async function fetchOrdersForUser(userId: string): Promise<OrderRecord[]> {
-  if (userId === DEMO_USER.id) {
-    return readLocalOrders(userId);
-  }
   const { data, error } = await supabase
     .from("orders")
     .select("*")
@@ -289,7 +235,7 @@ function ensureAuthListener() {
         session.user.user_metadata as Record<string, string>,
       );
       setCachedUser(profile);
-    } else if (cachedUser && cachedUser.id !== DEMO_USER.id) {
+    } else if (cachedUser) {
       setCachedUser(null);
     }
   });
@@ -330,14 +276,8 @@ export function useAuth() {
   const signIn = async (
     email: string,
     password: string,
-  ): Promise<{ ok: boolean; error?: string }> => {
+  ): Promise<{ ok: boolean; role?: UserRole; error?: string }> => {
     const normalized = email.trim().toLowerCase();
-
-    if (normalized === DEMO_USER.email && password === "soleverse123") {
-      setCachedUser(DEMO_USER);
-      toast.success(`Welcome back, ${DEMO_USER.fullName}!`);
-      return { ok: true };
-    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalized,
@@ -355,7 +295,7 @@ export function useAuth() {
     );
     setCachedUser(profile);
     toast.success(`Welcome back, ${profile.fullName}!`);
-    return { ok: true };
+    return { ok: true, role: profile.role };
   };
 
   const signUp = async (input: SignUpInput): Promise<{ ok: boolean; error?: string }> => {
@@ -404,21 +344,19 @@ export function useAuth() {
     const updated = { ...current, ...patch };
     setCachedUser(updated);
 
-    if (current.id !== DEMO_USER.id) {
-      await supabase
-        .from("profiles")
-        .update({
-          full_name: updated.fullName,
-          phone: updated.phone,
-          country: updated.country,
-          address: updated.address,
-          apartment: updated.apartment,
-          city: updated.city,
-          state: updated.state,
-          zip: updated.zip,
-        })
-        .eq("id", current.id);
-    }
+    await supabase
+      .from("profiles")
+      .update({
+        full_name: updated.fullName,
+        phone: updated.phone,
+        country: updated.country,
+        address: updated.address,
+        apartment: updated.apartment,
+        city: updated.city,
+        state: updated.state,
+        zip: updated.zip,
+      })
+      .eq("id", current.id);
   };
 
   const addOrder = async (order: OrderRecord) => {
@@ -428,24 +366,22 @@ export function useAuth() {
     const existing = readLocalOrders(current.id);
     writeLocalOrders(current.id, [order, ...existing]);
 
-    if (current.id !== DEMO_USER.id) {
-      await supabase.from("orders").insert({
-        id: order.id,
-        user_id: current.id,
-        tracking_number: order.trackingNumber,
-        courier: order.courier,
-        status: order.status,
-        current_step: order.currentStep,
-        estimated_delivery: order.estimatedDelivery,
-        total_usd: order.totalUSD,
-        origin: order.origin,
-        destination: order.destination,
-        customer_name: current.fullName,
-        customer_email: current.email,
-        items: order.items ?? [],
-      });
-      notify();
-    }
+    await supabase.from("orders").insert({
+      id: order.id,
+      user_id: current.id,
+      tracking_number: order.trackingNumber,
+      courier: order.courier,
+      status: order.status,
+      current_step: order.currentStep,
+      estimated_delivery: order.estimatedDelivery,
+      total_usd: order.totalUSD,
+      origin: order.origin,
+      destination: order.destination,
+      customer_name: current.fullName,
+      customer_email: current.email,
+      items: order.items ?? [],
+    });
+    notify();
   };
 
   return {

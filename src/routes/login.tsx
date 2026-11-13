@@ -67,7 +67,8 @@ function LoginPage() {
         setError(res.error ?? "Unable to sign in.");
         return;
       }
-      void navigate({ to: redirectTarget as "/shop" });
+      const nextRoute = !search.redirect && res.role === "admin" ? "/admin" : redirectTarget;
+      void navigate({ to: nextRoute as "/shop" });
     } finally {
       setSubmitting(false);
     }
@@ -102,13 +103,6 @@ function LoginPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const fillDemo = () => {
-    setTab("signin");
-    setError("");
-    setLoginEmail("alex.chen@example.com");
-    setLoginPassword("soleverse123");
   };
 
   return (
@@ -203,29 +197,12 @@ function LoginPage() {
 
             <button
               type="submit"
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-electric to-neon py-3.5 text-sm font-bold text-background shadow-lg transition-transform hover:scale-[1.01]"
+              disabled={submitting}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-electric to-neon py-3.5 text-sm font-bold text-background shadow-lg transition-transform hover:scale-[1.01] disabled:opacity-60"
             >
-              Sign In & Continue
+              {submitting ? "Signing in..." : "Sign In & Continue"}
               <ArrowRight className="h-4 w-4" />
             </button>
-
-            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-4 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-foreground">Demo Account</p>
-                  <p className="mt-0.5 text-muted-foreground">
-                    alex.chen@example.com · soleverse123
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={fillDemo}
-                  className="rounded-full border border-border bg-background px-3 py-1.5 text-[11px] font-semibold hover:border-electric transition-colors"
-                >
-                  Auto-fill
-                </button>
-              </div>
-            </div>
           </form>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-4">
