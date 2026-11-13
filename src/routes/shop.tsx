@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal, X, RotateCcw, LayoutGrid, Grid3X3 } from "lucide-react";
+import { Search, SlidersHorizontal, X, RotateCcw, LayoutGrid, Grid3X3, Check } from "lucide-react";
 import { z } from "zod";
 import { products, type Product } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
-import { PrimaryColorWheel, hexToHsl } from "@/components/primary-color-wheel";
+import { hexToHsl } from "@/components/primary-color-wheel";
 import { useCurrency } from "@/lib/currency-store";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -204,28 +204,53 @@ function ShopPage() {
       <div className="glass rounded-2xl p-5 border border-border/80">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Primary Color
+            Color
           </p>
           {selectedColor && (
-            <div className="flex items-center gap-2">
-              <span
-                className="h-3.5 w-3.5 rounded-full border border-white/25"
-                style={{ backgroundColor: selectedColor }}
-              />
-              <button
-                onClick={() => setSelectedColor(null)}
-                className="text-[10px] text-electric hover:underline"
-              >
-                Clear
-              </button>
-            </div>
+            <button
+              onClick={() => setSelectedColor(null)}
+              className="text-[10px] text-electric hover:underline"
+            >
+              Clear
+            </button>
           )}
         </div>
-        <PrimaryColorWheel
-          wheelOnly
-          value={selectedColor ?? "#3b82f6"}
-          onChange={(hex) => setSelectedColor(hex)}
-        />
+        <div className="flex flex-wrap gap-2.5">
+          {[
+            { name: "Black", hex: "#0a0a0a", border: false },
+            { name: "White", hex: "#ffffff", border: true },
+            { name: "Red", hex: "#ef4444", border: false },
+            { name: "Blue", hex: "#3b82f6", border: false },
+            { name: "Yellow", hex: "#eab308", border: false },
+            { name: "Green", hex: "#16a34a", border: false },
+            { name: "Orange", hex: "#f97316", border: false },
+            { name: "Silver", hex: "#c0c0c0", border: false },
+          ].map((c) => {
+            const isSelected = selectedColor?.toLowerCase() === c.hex.toLowerCase();
+            return (
+              <button
+                key={c.name}
+                onClick={() => setSelectedColor(isSelected ? null : c.hex)}
+                title={c.name}
+                aria-label={c.name}
+                className={`relative h-7 w-7 rounded-full transition-transform hover:scale-110 flex items-center justify-center ${
+                  c.border ? "border border-border" : ""
+                } ${isSelected ? "ring-2 ring-electric ring-offset-2 ring-offset-background" : ""}`}
+                style={{ backgroundColor: c.hex }}
+              >
+                {isSelected && (
+                  <Check
+                    className={`h-3.5 w-3.5 ${
+                      c.name === "White" || c.name === "Silver" || c.name === "Yellow"
+                        ? "text-black"
+                        : "text-white"
+                    }`}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Price Slider */}
