@@ -44,9 +44,12 @@ function matchesPrimaryColor(productColors: string[], selectedHex: string): bool
   const target = hexToHsl(selectedHex);
   const prod = hexToHsl(primaryHex);
 
-  // Near the center of the wheel (white/silver/gray/black): match neutral tones
+  // Near-neutral colors (black, white, silver/gray)
   if (target.s < 20) {
-    return prod.s < 25;
+    if (prod.s >= 25) return false;
+    if (target.l <= 25) return prod.l <= 30;
+    if (target.l >= 75) return prod.l >= 70;
+    return prod.l > 25 && prod.l < 85;
   }
 
   // Chromatic color: match by hue proximity (circular 0-360)

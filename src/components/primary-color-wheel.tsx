@@ -150,8 +150,54 @@ export function PrimaryColorWheel({
     </div>
   );
 
+  const primaryListElement = (
+    <div className="mt-3 pt-3 border-t border-border/60">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Primary Colors
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {[
+          { name: "Black", hex: "#0a0a0a" },
+          { name: "White", hex: "#ffffff" },
+          { name: "Red", hex: "#ef4444" },
+          { name: "Blue", hex: "#3b82f6" },
+          { name: "Yellow", hex: "#eab308" },
+          { name: "Green", hex: "#16a34a" },
+          { name: "Orange", hex: "#f97316" },
+          { name: "Silver", hex: "#c0c0c0" },
+        ].map((c) => {
+          const active = value.toLowerCase() === c.hex.toLowerCase();
+          return (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() => onChange(c.hex)}
+              title={c.name}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-medium transition-colors ${
+                active
+                  ? "border-electric bg-electric/15 text-electric"
+                  : "border-border/70 bg-background/50 text-muted-foreground hover:text-foreground hover:border-border"
+              }`}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full border border-white/25 shrink-0"
+                style={{ backgroundColor: c.hex }}
+              />
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if (wheelOnly) {
-    return <div className="flex justify-center py-1">{wheelElement}</div>;
+    return (
+      <div>
+        <div className="flex justify-center py-1">{wheelElement}</div>
+        {primaryListElement}
+      </div>
+    );
   }
 
   return (
@@ -213,6 +259,8 @@ export function PrimaryColorWheel({
           </p>
         </div>
       </div>
+
+      {primaryListElement}
     </div>
   );
 }
