@@ -41,6 +41,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { PrimaryColorWheel } from "@/components/primary-color-wheel";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -110,6 +111,7 @@ function AdminPage() {
     altImage:
       "https://images.unsplash.com/photo-1519861297062-a1eec154f81a?auto=format&fit=crop&w=900&q=80",
     badge: "New",
+    primaryColor: "#0a0a0a",
   });
 
   // Edit product modal
@@ -122,6 +124,7 @@ function AdminPage() {
     originalPrice: "",
     badge: "",
     image: "",
+    primaryColor: "#0a0a0a",
     inStock: true,
   });
 
@@ -298,7 +301,7 @@ function AdminPage() {
       reviews: 1,
       image: newProduct.image.trim(),
       altImage: newProduct.altImage.trim() || newProduct.image.trim(),
-      colors: ["#0a0a0a", "#ffffff"],
+      colors: [newProduct.primaryColor || "#0a0a0a"],
       badge: newProduct.badge.trim() || undefined,
       inStock: true,
       likesCount: 0,
@@ -342,6 +345,7 @@ function AdminPage() {
       originalPrice: p.originalPrice ? String(p.originalPrice) : "",
       badge: p.badge ?? "",
       image: p.image,
+      primaryColor: p.colors[0] ?? "#0a0a0a",
       inStock: p.inStock,
     });
   };
@@ -351,6 +355,7 @@ function AdminPage() {
     if (!editingProduct) return;
     const price = Number(editForm.price) || editingProduct.price;
     const originalPrice = editForm.originalPrice ? Number(editForm.originalPrice) : null;
+    const primaryColor = editForm.primaryColor || "#0a0a0a";
 
     const { error } = await supabase
       .from("products")
@@ -362,6 +367,7 @@ function AdminPage() {
         original_price: originalPrice,
         badge: editForm.badge.trim() || null,
         image: editForm.image.trim(),
+        colors: [primaryColor],
         in_stock: editForm.inStock,
       })
       .eq("id", editingProduct.id);
@@ -383,6 +389,7 @@ function AdminPage() {
               originalPrice: originalPrice ?? undefined,
               badge: editForm.badge.trim() || undefined,
               image: editForm.image.trim(),
+              colors: [primaryColor],
               inStock: editForm.inStock,
             }
           : p,
@@ -1042,6 +1049,10 @@ function AdminPage() {
               placeholder="Primary Image URL"
               className="w-full rounded-xl border border-border bg-background/60 px-3.5 py-2 text-sm outline-none"
             />
+            <PrimaryColorWheel
+              value={newProduct.primaryColor}
+              onChange={(primaryColor) => setNewProduct({ ...newProduct, primaryColor })}
+            />
             <button
               type="submit"
               className="w-full rounded-full bg-gradient-to-r from-electric to-neon py-2.5 text-xs font-bold text-background"
@@ -1122,6 +1133,10 @@ function AdminPage() {
               onChange={(e) => setEditForm({ ...editForm, image: e.target.value })}
               placeholder="Image URL"
               className="w-full rounded-xl border border-border bg-background/60 px-3.5 py-2 text-sm outline-none"
+            />
+            <PrimaryColorWheel
+              value={editForm.primaryColor}
+              onChange={(primaryColor) => setEditForm({ ...editForm, primaryColor })}
             />
             <label className="flex items-center gap-2 text-xs font-semibold">
               <input
