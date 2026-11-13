@@ -101,7 +101,7 @@ function Hero() {
         >
           <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-widest">
             <Sparkles className="h-3 w-3 text-electric" />
-            New Drop · Aero Pulse 01
+            New Drop · Nike Air Max 270 React
           </span>
           <h1 className="mt-6 font-display text-6xl font-bold leading-[0.95] tracking-tight md:text-8xl">
             Step Into <br />

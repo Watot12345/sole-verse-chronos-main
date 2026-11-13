@@ -1,10 +1,3 @@
-import running from "@/assets/shoe-running.jpg";
-import basketball from "@/assets/shoe-basketball.jpg";
-import lifestyle from "@/assets/shoe-lifestyle.jpg";
-import limited from "@/assets/shoe-limited.jpg";
-import training from "@/assets/shoe-training.jpg";
-import casual from "@/assets/shoe-casual.jpg";
-
 export type Product = {
   id: string;
   name: string;
@@ -21,126 +14,144 @@ export type Product = {
   inStock: boolean;
 };
 
+const IMG_NIKE_RUNNING =
+  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80";
+const IMG_NIKE_AF1 =
+  "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?auto=format&fit=crop&w=900&q=80";
+const IMG_JORDAN_1 =
+  "https://images.unsplash.com/photo-1542219550-37153d387c27?auto=format&fit=crop&w=900&q=80";
+const IMG_JORDAN_BOX =
+  "https://images.unsplash.com/photo-1751624310837-32ecd6bc6d94?auto=format&fit=crop&w=900&q=80";
+const IMG_ADIDAS_BOOST =
+  "https://images.unsplash.com/photo-1519861297062-a1eec154f81a?auto=format&fit=crop&w=900&q=80";
+const IMG_NB_574 =
+  "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?auto=format&fit=crop&w=900&q=80";
+const IMG_NB_550 =
+  "https://images.unsplash.com/photo-1621315271772-28b1f3a5df87?auto=format&fit=crop&w=900&q=80";
+const IMG_NB_990 =
+  "https://images.unsplash.com/photo-1643541323850-14dc38b00c12?auto=format&fit=crop&w=900&q=80";
+
 export const products: Product[] = [
   {
-    id: "sv-aero-01",
-    name: "Aero Pulse 01",
-    brand: "SoleVerse",
+    id: "nike-air-max-270",
+    name: "Nike Air Max 270 React",
+    brand: "Nike",
     category: "Running",
-    price: 189,
-    originalPrice: 220,
+    price: 170,
+    originalPrice: 195,
     rating: 4.8,
     reviews: 324,
-    image: running,
-    altImage: training,
-    colors: ["#3b82f6", "#ffffff", "#0a0a0a"],
+    image: IMG_NIKE_RUNNING,
+    altImage: IMG_ADIDAS_BOOST,
+    colors: ["#ef4444", "#ffffff", "#0a0a0a"],
     badge: "New",
     inStock: true,
   },
   {
-    id: "sv-court-x",
-    name: "Court Reign X",
-    brand: "SoleVerse",
+    id: "jordan-1-retro-og",
+    name: "Air Jordan 1 Retro High OG",
+    brand: "Jordan",
     category: "Basketball",
-    price: 245,
+    price: 185,
     rating: 4.9,
     reviews: 512,
-    image: basketball,
-    altImage: limited,
-    colors: ["#0a0a0a", "#a855f7", "#ffffff"],
+    image: IMG_JORDAN_1,
+    altImage: IMG_JORDAN_BOX,
+    colors: ["#0a0a0a", "#c0c0c0", "#ffffff"],
     badge: "Bestseller",
     inStock: true,
   },
   {
-    id: "sv-chrome-lo",
-    name: "Chrome Lo Metallic",
-    brand: "SoleVerse",
+    id: "nb-574-classic",
+    name: "New Balance 574 Classic",
+    brand: "New Balance",
     category: "Lifestyle",
-    price: 165,
+    price: 110,
     rating: 4.7,
     reviews: 198,
-    image: lifestyle,
-    altImage: casual,
+    image: IMG_NB_574,
+    altImage: IMG_NB_550,
     colors: ["#c0c0c0", "#ffffff"],
     inStock: true,
   },
   {
-    id: "sv-eclipse",
-    name: "Eclipse Prism",
-    brand: "SoleVerse",
+    id: "jordan-1-collectors",
+    name: "Air Jordan 1 Collector's Pack",
+    brand: "Jordan",
     category: "Limited Edition",
-    price: 420,
-    originalPrice: 480,
+    price: 320,
+    originalPrice: 380,
     rating: 5.0,
     reviews: 87,
-    image: limited,
-    altImage: basketball,
-    colors: ["#0a0a0a", "#a855f7"],
+    image: IMG_JORDAN_BOX,
+    altImage: IMG_JORDAN_1,
+    colors: ["#0a0a0a", "#ef4444", "#ffffff"],
     badge: "Limited",
     inStock: true,
   },
   {
-    id: "sv-forge",
-    name: "Forge Trainer Pro",
-    brand: "SoleVerse",
+    id: "adidas-ultraboost-light",
+    name: "Adidas Ultraboost Light",
+    brand: "Adidas",
     category: "Training",
-    price: 159,
-    rating: 4.6,
+    price: 190,
+    rating: 4.8,
     reviews: 241,
-    image: training,
-    altImage: running,
-    colors: ["#1f2937", "#3b82f6"],
+    image: IMG_ADIDAS_BOOST,
+    altImage: IMG_NIKE_RUNNING,
+    colors: ["#0a0a0a", "#ffffff"],
     inStock: true,
   },
   {
-    id: "sv-blanco",
-    name: "Blanco Minima",
-    brand: "SoleVerse",
+    id: "nike-air-force-1-07",
+    name: "Nike Air Force 1 '07",
+    brand: "Nike",
     category: "Casual",
-    price: 119,
-    rating: 4.5,
+    price: 115,
+    rating: 4.9,
     reviews: 612,
-    image: casual,
-    altImage: lifestyle,
+    image: IMG_NIKE_AF1,
+    altImage: IMG_NB_550,
     colors: ["#ffffff"],
+    badge: "Icon",
     inStock: true,
   },
   {
-    id: "sv-aero-02",
-    name: "Aero Pulse Carbon",
-    brand: "SoleVerse",
+    id: "nb-990v6-usa",
+    name: "New Balance 990v6 Made in USA",
+    brand: "New Balance",
     category: "Running",
-    price: 210,
-    rating: 4.7,
+    price: 200,
+    rating: 4.8,
     reviews: 156,
-    image: training,
-    altImage: running,
-    colors: ["#0a0a0a", "#3b82f6"],
+    image: IMG_NB_990,
+    altImage: IMG_NB_574,
+    colors: ["#0a0a0a", "#c0c0c0"],
     badge: "New",
     inStock: true,
   },
   {
-    id: "sv-court-violet",
-    name: "Court Reign Violet",
-    brand: "SoleVerse",
+    id: "nb-550-vintage",
+    name: "New Balance 550 Vintage",
+    brand: "New Balance",
     category: "Basketball",
-    price: 260,
-    rating: 4.8,
+    price: 120,
+    rating: 4.7,
     reviews: 92,
-    image: limited,
-    altImage: basketball,
-    colors: ["#0a0a0a", "#a855f7"],
+    image: IMG_NB_550,
+    altImage: IMG_NIKE_AF1,
+    colors: ["#ffffff", "#0a0a0a"],
     inStock: false,
   },
 ];
 
 export const categories = [
-  { name: "Running", image: running },
-  { name: "Basketball", image: basketball },
-  { name: "Casual", image: casual },
-  { name: "Training", image: training },
-  { name: "Lifestyle", image: lifestyle },
-  { name: "Limited Edition", image: limited },
+  { name: "Running", image: IMG_NIKE_RUNNING },
+  { name: "Basketball", image: IMG_JORDAN_1 },
+  { name: "Casual", image: IMG_NIKE_AF1 },
+  { name: "Training", image: IMG_ADIDAS_BOOST },
+  { name: "Lifestyle", image: IMG_NB_574 },
+  { name: "Limited Edition", image: IMG_JORDAN_BOX },
 ];
 
 export function getProduct(id: string) {

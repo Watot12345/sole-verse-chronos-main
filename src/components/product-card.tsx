@@ -92,7 +92,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                {product.category}
+                {product.brand} · {product.category}
               </p>
               <h3 className="mt-1 truncate font-display text-base font-semibold group-hover:text-electric transition-colors">
                 {product.name}
