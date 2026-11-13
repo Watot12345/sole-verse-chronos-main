@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowRight,
   Truck,
@@ -20,9 +21,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "SoleVerse — Step Into The Future" },
-      { name: "description", content: "Premium sneakers engineered for performance, comfort, and modern lifestyle." },
+      {
+        name: "description",
+        content: "Premium sneakers engineered for performance, comfort, and modern lifestyle.",
+      },
       { property: "og:title", content: "SoleVerse — Step Into The Future" },
-      { property: "og:description", content: "Premium sneakers engineered for performance, comfort, and modern lifestyle." },
+      {
+        property: "og:description",
+        content: "Premium sneakers engineered for performance, comfort, and modern lifestyle.",
+      },
     ],
   }),
   component: Index,
@@ -116,7 +123,8 @@ function Hero() {
               to="/shop"
               className="group inline-flex items-center gap-2 rounded-full bg-foreground px-7 py-4 text-sm font-semibold text-background transition-all hover:scale-105 hover:shadow-[0_0_40px_oklch(1_0_0/0.3)]"
             >
-              Shop Now <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              Shop Now{" "}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               to="/shop"
@@ -139,10 +147,15 @@ function Featured() {
     <section className="relative mx-auto max-w-7xl px-6 py-24">
       <div className="mb-12 flex items-end justify-between gap-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Featured Collection</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Featured Collection
+          </p>
           <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">Engineered icons.</h2>
         </div>
-        <Link to="/shop" className="hidden items-center gap-1 text-sm text-muted-foreground hover:text-foreground md:inline-flex">
+        <Link
+          to="/shop"
+          className="hidden items-center gap-1 text-sm text-muted-foreground hover:text-foreground md:inline-flex"
+        >
           View all <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
@@ -162,7 +175,9 @@ function Trending() {
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="mb-12">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Trending Now</p>
-          <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">What the world is wearing.</h2>
+          <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">
+            What the world is wearing.
+          </h2>
         </div>
         <div className="-mx-6 flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {products.slice(2, 8).map((p, i) => (
@@ -234,7 +249,9 @@ function Why() {
     <section className="mx-auto max-w-7xl px-6 py-24">
       <div className="mb-12 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Why SoleVerse</p>
-        <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">Built for the obsessed.</h2>
+        <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">
+          Built for the obsessed.
+        </h2>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f, i) => (
@@ -259,9 +276,24 @@ function Why() {
 }
 
 const reviews = [
-  { name: "Alex Chen", role: "Runner", avatar: "AC", text: "The Aero Pulse changed how I run. Light, responsive, and the design is unmatched." },
-  { name: "Maya Rodriguez", role: "Designer", avatar: "MR", text: "Wore the Chrome Lo to a launch event. Got compliments all night. Feels like wearing art." },
-  { name: "Jordan Park", role: "Athlete", avatar: "JP", text: "Court Reign X is the most comfortable basketball shoe I've ever owned. Period." },
+  {
+    name: "Alex Chen",
+    role: "Runner",
+    avatar: "AC",
+    text: "The Aero Pulse changed how I run. Light, responsive, and the design is unmatched.",
+  },
+  {
+    name: "Maya Rodriguez",
+    role: "Designer",
+    avatar: "MR",
+    text: "Wore the Chrome Lo to a launch event. Got compliments all night. Feels like wearing art.",
+  },
+  {
+    name: "Jordan Park",
+    role: "Athlete",
+    avatar: "JP",
+    text: "Court Reign X is the most comfortable basketball shoe I've ever owned. Period.",
+  },
 ];
 
 function Testimonials() {
@@ -271,7 +303,9 @@ function Testimonials() {
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="mb-12">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Voices</p>
-          <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">Loved by the few. Worn by the bold.</h2>
+          <h2 className="mt-3 font-display text-4xl font-bold md:text-5xl">
+            Loved by the few. Worn by the bold.
+          </h2>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {reviews.map((r, i) => (
@@ -307,33 +341,53 @@ function Testimonials() {
 }
 
 function Newsletter() {
+  const [email, setEmail] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    toast.success("Welcome to SoleVerse Priority Access!", {
+      description: `We'll notify ${email} before our next limited worldwide drop.`,
+    });
+    setEmail("");
+  };
+
   return (
     <section className="mx-auto max-w-5xl px-6 py-24">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="glass relative overflow-hidden rounded-3xl p-10 text-center md:p-16"
+        className="glass relative overflow-hidden rounded-3xl p-10 text-center md:p-16 border border-border/80"
       >
         <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-electric/30 blur-3xl" />
         <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-neon/30 blur-3xl" />
         <div className="relative">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Join the Verse</p>
-          <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">Drops, in your inbox.</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            Be first to know when new editions release. No spam — only signals.
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground font-semibold">
+            Join the Verse
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-bold md:text-5xl">
+            Drops, in your inbox.
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-xs sm:text-sm text-muted-foreground">
+            Be first to know when new editions release worldwide. No spam — only signals.
           </p>
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row"
           >
             <input
               type="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@future.com"
-              className="flex-1 rounded-full border border-border bg-background/60 px-5 py-3 text-sm outline-none ring-electric/40 focus:ring-2"
+              className="flex-1 rounded-full border border-border bg-background/60 px-5 py-3 text-sm outline-none ring-electric/40 focus:ring-2 text-foreground"
             />
-            <button className="rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition-transform hover:scale-105">
+            <button
+              type="submit"
+              className="rounded-full bg-foreground px-6 py-3 text-xs font-bold uppercase tracking-wider text-background transition-transform hover:scale-105 active:scale-95"
+            >
               Subscribe
             </button>
           </form>
