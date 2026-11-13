@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal, X, RotateCcw, LayoutGrid, Grid3X3, Check } from "lucide-react";
+import { Search, SlidersHorizontal, X, RotateCcw, LayoutGrid, Grid3X3 } from "lucide-react";
 import { z } from "zod";
 import { products, type Product } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
+import { PrimaryColorWheel, hexToHsl } from "@/components/primary-color-wheel";
 import { useCurrency } from "@/lib/currency-store";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -36,13 +37,24 @@ const categories = [
   "Limited Edition",
 ];
 const sizes = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 12];
-const colorOptions = [
-  { name: "Black", hex: "#0a0a0a", border: false },
-  { name: "White", hex: "#ffffff", border: true },
-  { name: "Blue", hex: "#3b82f6", border: false },
-  { name: "Purple", hex: "#a855f7", border: false },
-  { name: "Silver", hex: "#c0c0c0", border: false },
-];
+
+function matchesPrimaryColor(productColors: string[], selectedHex: string): boolean {
+  const primaryHex = productColors[0];
+  if (!primaryHex) return false;
+  const target = hexToHsl(selectedHex);
+  const prod = hexToHsl(primaryHex);
+
+  // Near the center of the wheel (white/silver/gray/black): match neutral tones
+  if (target.s < 20) {
+    return prod.s < 25;
+  }
+
+  // Chromatic color: match by hue proximity (circular 0-360)
+  if (prod.s < 15) return false;
+  const diff = Math.abs(target.h - prod.h);
+  const hueDist = Math.min(diff, 360 - diff);
+  return hueDist <= 42;
+}
 
 function ShopPage() {
   const search = Route.useSearch();
@@ -70,10 +82,8 @@ function ShopPage() {
         const matchCategory = p.category.toLowerCase().includes(query);
         if (!matchName && !matchBrand && !matchCategory) return false;
       }
-      if (selectedColor) {
-        // Approximate color matching based on hex substring
-        const colorObj = colorOptions.find((c) => c.name === selectedColor);
-        if (colorObj && !p.colors.includes(colorObj.hex)) return false;
+      if (selectedColor && !matchesPrimaryColor(p.colors, selectedColor)) {
+        return false;
       }
       return true;
     });
@@ -191,41 +201,28 @@ function ShopPage() {
       <div className="glass rounded-2xl p-5 border border-border/80">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Color
+            Primary Color
           </p>
           {selectedColor && (
-            <button
-              onClick={() => setSelectedColor(null)}
-              className="text-[10px] text-electric hover:underline"
-            >
-              Clear
-            </button>
+            <div className="flex items-center gap-2">
+              <span
+                className="h-3.5 w-3.5 rounded-full border border-white/25"
+                style={{ backgroundColor: selectedColor }}
+              />
+              <button
+                onClick={() => setSelectedColor(null)}
+                className="text-[10px] text-electric hover:underline"
+              >
+                Clear
+              </button>
+            </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          {colorOptions.map((c) => {
-            const isSelected = selectedColor === c.name;
-            return (
-              <button
-                key={c.name}
-                onClick={() => setSelectedColor(isSelected ? null : c.name)}
-                title={c.name}
-                className={`relative h-7 w-7 rounded-full transition-transform hover:scale-110 flex items-center justify-center ${
-                  c.border ? "border border-border" : ""
-                } ${isSelected ? "ring-2 ring-electric ring-offset-2 ring-offset-background" : ""}`}
-                style={{ backgroundColor: c.hex }}
-              >
-                {isSelected && (
-                  <Check
-                    className={`h-3.5 w-3.5 ${
-                      c.name === "White" || c.name === "Silver" ? "text-black" : "text-white"
-                    }`}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <PrimaryColorWheel
+          wheelOnly
+          value={selectedColor ?? "#3b82f6"}
+          onChange={(hex) => setSelectedColor(hex)}
+        />
       </div>
 
       {/* Price Slider */}
@@ -319,7 +316,7 @@ function ShopPage() {
       {/* Main Grid Layout */}
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         {/* Desktop Sidebar Filters */}
-        <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start max-h-[calc(100vh-7rem)] overflow-y-auto pr-1">
+        <aside className="hidden lg:block lg:self-start">
           {FiltersContent}
         </aside>
 

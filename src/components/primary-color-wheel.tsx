@@ -4,6 +4,7 @@ interface PrimaryColorWheelProps {
   value: string;
   onChange: (hex: string) => void;
   label?: string;
+  wheelOnly?: boolean;
 }
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -20,7 +21,7 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-function hexToHsl(hex: string): { h: number; s: number; l: number } {
+export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const clean = hex.replace("#", "");
   if (!/^[0-9a-fA-F]{6}$/.test(clean)) {
     return { h: 0, s: 0, l: 10 };
@@ -65,6 +66,7 @@ export function PrimaryColorWheel({
   value,
   onChange,
   label = "Primary Color",
+  wheelOnly = false,
 }: PrimaryColorWheelProps) {
   const wheelRef = useRef<HTMLDivElement>(null);
   const [hsl, setHsl] = useState(() => hexToHsl(value));
@@ -92,12 +94,12 @@ export function PrimaryColorWheel({
 
       const dist = Math.min(Math.hypot(dx, dy), radius);
       const sat = Math.round((dist / radius) * 100);
-      const nextL = hsl.l < 8 || hsl.l > 92 ? 50 : hsl.l;
+      const nextL = wheelOnly ? 50 : hsl.l < 8 || hsl.l > 92 ? 50 : hsl.l;
       const next = { h: Math.round(deg) % 360, s: sat, l: nextL };
       setHsl(next);
       onChange(hslToHex(next.h, next.s, next.l));
     },
-    [hsl.l, onChange],
+    [hsl.l, onChange, wheelOnly],
   );
 
   const handleLightnessChange = (nextL: number) => {
@@ -111,6 +113,46 @@ export function PrimaryColorWheel({
   const rPx = (hsl.s / 100) * (WHEEL_SIZE / 2);
   const markerX = WHEEL_SIZE / 2 + Math.cos(angleRad) * rPx;
   const markerY = WHEEL_SIZE / 2 + Math.sin(angleRad) * rPx;
+
+  const wheelElement = (
+    <div
+      ref={wheelRef}
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setDragging(true);
+        pickFromPointer(e.clientX, e.clientY);
+      }}
+      onPointerMove={(e) => {
+        if (!dragging) return;
+        pickFromPointer(e.clientX, e.clientY);
+      }}
+      onPointerUp={() => setDragging(false)}
+      onPointerCancel={() => setDragging(false)}
+      className="relative shrink-0 cursor-crosshair rounded-full border border-border/80 shadow-inner touch-none select-none"
+      style={{
+        width: WHEEL_SIZE,
+        height: WHEEL_SIZE,
+        background:
+          "radial-gradient(circle, #ffffff 0%, transparent 70%), conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+      }}
+      aria-label="Primary color wheel picker"
+      role="slider"
+      aria-valuetext={value}
+    >
+      <span
+        className="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_4px_rgba(0,0,0,0.8)]"
+        style={{
+          left: markerX,
+          top: markerY,
+          backgroundColor: value,
+        }}
+      />
+    </div>
+  );
+
+  if (wheelOnly) {
+    return <div className="flex justify-center py-1">{wheelElement}</div>;
+  }
 
   return (
     <div className="rounded-xl border border-border bg-background/40 p-3">
@@ -127,39 +169,7 @@ export function PrimaryColorWheel({
 
       <div className="flex items-center gap-4">
         {/* Interactive HSL Color Wheel */}
-        <div
-          ref={wheelRef}
-          onPointerDown={(e) => {
-            e.currentTarget.setPointerCapture(e.pointerId);
-            setDragging(true);
-            pickFromPointer(e.clientX, e.clientY);
-          }}
-          onPointerMove={(e) => {
-            if (!dragging) return;
-            pickFromPointer(e.clientX, e.clientY);
-          }}
-          onPointerUp={() => setDragging(false)}
-          onPointerCancel={() => setDragging(false)}
-          className="relative shrink-0 cursor-crosshair rounded-full border border-border/80 shadow-inner touch-none select-none"
-          style={{
-            width: WHEEL_SIZE,
-            height: WHEEL_SIZE,
-            background:
-              "radial-gradient(circle, #ffffff 0%, transparent 70%), conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
-          }}
-          aria-label="Primary color wheel picker"
-          role="slider"
-          aria-valuetext={value}
-        >
-          <span
-            className="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_4px_rgba(0,0,0,0.8)]"
-            style={{
-              left: markerX,
-              top: markerY,
-              backgroundColor: value,
-            }}
-          />
-        </div>
+        {wheelElement}
 
         {/* Lightness & exact hex controls */}
         <div className="flex-1 space-y-2.5">
