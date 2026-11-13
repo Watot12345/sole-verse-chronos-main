@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import heroSneaker from "@/assets/hero-sneaker.jpg";
+import { useCmsContent } from "@/lib/cms-store";
 import { products, categories } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 
@@ -61,6 +62,7 @@ function Particles() {
 }
 
 function Hero() {
+  const { content } = useCmsContent();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
@@ -101,11 +103,11 @@ function Hero() {
         >
           <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-widest">
             <Sparkles className="h-3 w-3 text-electric" />
-            New Drop · Nike Air Max 270 React
+            {content.heroBadge}
           </span>
           <h1 className="mt-6 font-display text-6xl font-bold leading-[0.95] tracking-tight md:text-8xl">
-            Step Into <br />
-            <span className="text-gradient">The Future</span>
+            {content.heroTitleLine1} <br />
+            <span className="text-gradient">{content.heroTitleHighlight}</span>
           </h1>
         </motion.div>
 
@@ -116,7 +118,7 @@ function Hero() {
           className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end"
         >
           <p className="max-w-md text-base text-muted-foreground md:text-lg">
-            Premium sneakers engineered for performance, comfort, and modern lifestyle.
+            {content.heroSubtitle}
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
