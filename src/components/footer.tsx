@@ -81,7 +81,7 @@ export function Footer() {
                 <li key={l.label}>
                   <Link
                     to={l.to}
-                    search={l.search}
+                    search={"search" in l ? l.search : undefined}
                     className="text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {l.label}

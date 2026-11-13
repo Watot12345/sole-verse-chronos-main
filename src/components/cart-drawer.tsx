@@ -4,20 +4,21 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useCart } from "@/lib/cart-store";
 import { getProduct, useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
-
-const FREE_SHIPPING_THRESHOLD_USD = 150;
+import { useCmsContent } from "@/lib/cms-store";
 
 export function CartDrawer() {
   useProducts(); // re-render when the live catalog loads
   const { items, isDrawerOpen, closeCart, update, remove } = useCart();
   const { format, convert } = useCurrency();
+  const { content } = useCmsContent();
+  const freeShippingThresholdUSD = content.freeShippingThresholdUSD || 150;
 
   const lines = items.map((i) => ({ ...i, product: getProduct(i.id) })).filter((l) => l.product);
 
   const subtotalUSD = lines.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
-  const freeShippingMet = subtotalUSD >= FREE_SHIPPING_THRESHOLD_USD;
-  const progressPercent = Math.min(100, (subtotalUSD / FREE_SHIPPING_THRESHOLD_USD) * 100);
-  const remainingUSD = Math.max(0, FREE_SHIPPING_THRESHOLD_USD - subtotalUSD);
+  const freeShippingMet = subtotalUSD >= freeShippingThresholdUSD;
+  const progressPercent = Math.min(100, (subtotalUSD / freeShippingThresholdUSD) * 100);
+  const remainingUSD = Math.max(0, freeShippingThresholdUSD - subtotalUSD);
 
   return (
     <Sheet open={isDrawerOpen} onOpenChange={(open) => !open && closeCart()}>

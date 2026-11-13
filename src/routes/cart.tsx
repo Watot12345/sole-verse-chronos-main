@@ -113,7 +113,7 @@ function CartPage() {
               <div className="flex items-center justify-between text-xs font-medium">
                 <span className="flex items-center gap-2">
                   <Truck className="h-4 w-4 text-electric" />
-                  {subtotalUSD >= FREE_SHIPPING_THRESHOLD_USD || freeShippingApplied ? (
+                  {subtotalUSD >= freeShippingThresholdUSD || freeShippingApplied ? (
                     <span className="text-neon font-bold">
                       🎉 Congratulations! You have unlocked FREE Express Worldwide Shipping.
                     </span>

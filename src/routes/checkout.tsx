@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth-store";
 import { useCart } from "@/lib/cart-store";
 import { getProduct, useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
+import { useCmsContent } from "@/lib/cms-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
@@ -58,6 +59,8 @@ function CheckoutPage() {
   const { user, isAuthenticated, isHydrated, addOrder, updateProfile } = useAuth();
   const { items, clear, add } = useCart();
   const { format, convert } = useCurrency();
+  const { content } = useCmsContent();
+  const freeShippingThresholdUSD = content.freeShippingThresholdUSD || 150;
   const [step, setStep] = useState(0);
   const [orderNumber, setOrderNumber] = useState("");
 
@@ -124,10 +127,10 @@ function CheckoutPage() {
     shippingMethod === "fedex"
       ? 28
       : shippingMethod === "dhl"
-        ? subtotalUSD >= 150
+        ? subtotalUSD >= freeShippingThresholdUSD
           ? 0
           : 15
-        : subtotalUSD >= 150
+        : subtotalUSD >= freeShippingThresholdUSD
           ? 0
           : 10;
 
@@ -487,7 +490,7 @@ function CheckoutPage() {
                       </div>
                     </div>
                     <span className="font-display text-xs font-bold text-foreground">
-                      {subtotalUSD >= 150 ? <span className="text-neon">FREE</span> : format(15)}
+                      {subtotalUSD >= freeShippingThresholdUSD ? <span className="text-neon">FREE</span> : format(15)}
                     </span>
                   </label>
 
@@ -545,7 +548,7 @@ function CheckoutPage() {
                       </div>
                     </div>
                     <span className="font-display text-xs font-bold text-foreground">
-                      {subtotalUSD >= 150 ? <span className="text-neon">FREE</span> : format(10)}
+                      {subtotalUSD >= freeShippingThresholdUSD ? <span className="text-neon">FREE</span> : format(10)}
                     </span>
                   </label>
                 </div>
