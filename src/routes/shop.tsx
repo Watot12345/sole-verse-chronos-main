@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal, X, RotateCcw, LayoutGrid, Grid3X3, Check } from "lucide-react";
 import { z } from "zod";
 import { products, type Product } from "@/lib/products";
@@ -64,6 +64,9 @@ function ShopPage() {
   const { format, currentConfig } = useCurrency();
 
   const [category, setCategory] = useState<string>(search.category ?? "All");
+  useEffect(() => {
+    setCategory(search.category ?? "All");
+  }, [search.category]);
   const [q, setQ] = useState("");
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -311,14 +314,15 @@ function ShopPage() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              Official Catalog
+              {category === "Limited Edition" ? "Exclusive Releases" : "Official Catalog"}
             </p>
             <h1 className="mt-2 font-display text-4xl sm:text-5xl md:text-6xl font-bold">
-              The Collection
+              {category === "Limited Edition" ? "Limited Drops" : "The Collection"}
             </h1>
             <p className="mt-3 max-w-xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Every silhouette is engineered with proprietary responsive foam and adaptive knit.
-              Designed for world-class athletes and style innovators.
+              {category === "Limited Edition"
+                ? "Small-batch collector packs and numbered silhouettes available in limited quantities."
+                : "Every silhouette is engineered with proprietary responsive foam and adaptive knit. Designed for world-class athletes and style innovators."}
             </p>
           </div>
 
