@@ -11,7 +11,6 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/lib/auth-store";
 import { useCart } from "@/lib/cart-store";
 import { getProduct } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
@@ -33,7 +32,6 @@ export const Route = createFileRoute("/cart")({
 const FREE_SHIPPING_THRESHOLD_USD = 150;
 
 function CartPage() {
-  const { isAuthenticated, isHydrated } = useAuth();
   const { items, update, remove, clear } = useCart();
   const { format, convert } = useCurrency();
   const [coupon, setCoupon] = useState("");
@@ -77,7 +75,7 @@ function CartPage() {
             {lines.length} unique silhouette{lines.length !== 1 && "s"} ready for dispatch
           </p>
         </div>
-        {isAuthenticated && lines.length > 0 && (
+        {lines.length > 0 && (
           <button
             onClick={clear}
             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
@@ -87,27 +85,7 @@ function CartPage() {
         )}
       </div>
 
-      {isHydrated && !isAuthenticated ? (
-        <div className="glass mt-12 rounded-3xl py-20 px-6 text-center border border-border/80">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-secondary text-electric">
-            <ShieldCheck className="h-8 w-8 stroke-[1.5]" />
-          </div>
-          <h3 className="mt-4 font-display text-xl font-bold text-foreground">
-            Sign in to view your saved bag
-          </h3>
-          <p className="mt-2 text-xs text-muted-foreground max-w-sm mx-auto">
-            Sign in or create a SoleVerse account to save your sneakers, shipping details, and
-            checkout faster.
-          </p>
-          <Link
-            to="/login"
-            search={{ redirect: "/cart" }}
-            className="mt-6 inline-block rounded-full bg-gradient-to-r from-electric to-neon px-8 py-3 text-xs font-bold uppercase tracking-wider text-background shadow-lg transition-transform hover:scale-105"
-          >
-            Sign In / Create Account
-          </Link>
-        </div>
-      ) : lines.length === 0 ? (
+      {lines.length === 0 ? (
         <div className="glass mt-12 rounded-3xl py-24 text-center border border-border/80">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-secondary text-muted-foreground">
             <Truck className="h-8 w-8 stroke-[1.5]" />
