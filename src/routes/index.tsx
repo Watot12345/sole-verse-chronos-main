@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import heroSneaker from "@/assets/hero-sneaker.jpg";
 import { useCmsContent } from "@/lib/cms-store";
-import { products, categories } from "@/lib/products";
+import { useProducts, categories } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/")({
@@ -145,6 +145,7 @@ function Hero() {
 }
 
 function Featured() {
+  const products = useProducts();
   return (
     <section className="relative mx-auto max-w-7xl px-6 py-24">
       <div className="mb-12 flex items-end justify-between gap-6">
@@ -171,6 +172,7 @@ function Featured() {
 }
 
 function Trending() {
+  const products = useProducts();
   return (
     <section className="relative overflow-hidden py-24">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.62_0.27_305/0.15),transparent_60%)]" />

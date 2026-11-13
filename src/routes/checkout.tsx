@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-store";
 import { useCart } from "@/lib/cart-store";
-import { getProduct, products } from "@/lib/products";
+import { getProduct, useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
 import { toast } from "sonner";
 
@@ -53,6 +53,7 @@ const COUNTRIES = [
 ];
 
 function CheckoutPage() {
+  const products = useProducts();
   const navigate = useNavigate();
   const { user, isAuthenticated, isHydrated, addOrder, updateProfile } = useAuth();
   const { items, clear, add } = useCart();

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal, X, RotateCcw, LayoutGrid, Grid3X3, Check } from "lucide-react";
 import { z } from "zod";
-import { products, type Product } from "@/lib/products";
+import { useProducts, getProductSizes, type Product } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 import { hexToHsl } from "@/components/primary-color-wheel";
 import { useCurrency } from "@/lib/currency-store";
@@ -36,7 +36,7 @@ const categories = [
   "Casual",
   "Limited Edition",
 ];
-const sizes = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 12];
+const sizes = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13];
 
 function matchesPrimaryColor(productColors: string[], selectedHex: string): boolean {
   const primaryHex = productColors[0];
@@ -62,6 +62,7 @@ function matchesPrimaryColor(productColors: string[], selectedHex: string): bool
 function ShopPage() {
   const search = Route.useSearch();
   const { format, currentConfig } = useCurrency();
+  const products = useProducts();
 
   const [category, setCategory] = useState<string>(search.category ?? "All");
   useEffect(() => {
@@ -91,6 +92,9 @@ function ShopPage() {
       if (selectedColor && !matchesPrimaryColor(p.colors, selectedColor)) {
         return false;
       }
+      if (selectedSize !== null && !getProductSizes(p).includes(selectedSize)) {
+        return false;
+      }
       return true;
     });
 
@@ -100,7 +104,7 @@ function ShopPage() {
     if (sort === "reviews") list = [...list].sort((a, b) => b.reviews - a.reviews);
     if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [category, q, maxPrice, sort, inStockOnly, selectedColor]);
+  }, [products, category, q, maxPrice, sort, inStockOnly, selectedColor, selectedSize]);
 
   const activeFiltersCount =
     (category !== "All" ? 1 : 0) +

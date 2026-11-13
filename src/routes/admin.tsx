@@ -31,7 +31,13 @@ import {
 import { toast } from "sonner";
 import { useAuth, type UserProfile } from "@/lib/auth-store";
 import { useCmsContent } from "@/lib/cms-store";
-import { products as fallbackProducts, type Product } from "@/lib/products";
+import {
+  products as fallbackProducts,
+  ALL_SIZES,
+  loadCatalog,
+  mapProductRow,
+  type Product,
+} from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 import { useCurrency } from "@/lib/currency-store";
 import {
@@ -75,6 +81,75 @@ const CATEGORIES: Product["category"][] = [
   "Limited Edition",
 ];
 
+/** All sizes selected → store NULL (= every size) so new sizes are included automatically. */
+function normalizeSizes(sizes: number[]): number[] | undefined {
+  const sorted = [...new Set(sizes)].sort((a, b) => a - b);
+  return sorted.length === 0 || sorted.length === ALL_SIZES.length ? undefined : sorted;
+}
+
+/**
+ * Runs a product write including `sizes`. If the `sizes` column hasn't been
+ * created yet (migration 002 not run), retries without it so edits still save.
+ */
+async function writeWithSizesFallback(
+  sizes: number[] | undefined,
+  run: (sizesField: { sizes?: number[] | null }) => PromiseLike<{ error: { message: string } | null }>,
+) {
+  const first = await run({ sizes: sizes ?? null });
+  if (first.error && /sizes/.test(first.error.message)) {
+    const retry = await run({});
+    if (!retry.error) {
+      toast.warning(
+        "Saved, but sizes were skipped — run supabase/migrations/002_live_catalog_and_cms.sql to enable per-product sizes.",
+      );
+    }
+    return retry;
+  }
+  return first;
+}
+
+function SizePicker({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
+  const toggle = (s: number) =>
+    onChange(value.includes(s) ? value.filter((x) => x !== s) : [...value, s]);
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold text-muted-foreground">Available Sizes (US)</span>
+        <div className="flex gap-2 text-[10px]">
+          <button type="button" onClick={() => onChange([...ALL_SIZES])} className="text-electric hover:underline">
+            All
+          </button>
+          <button type="button" onClick={() => onChange([])} className="text-muted-foreground hover:underline">
+            None
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-6 gap-1.5">
+        {ALL_SIZES.map((s) => {
+          const on = value.includes(s);
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => toggle(s)}
+              className={`rounded-lg border py-1.5 text-[11px] font-semibold transition-colors ${
+                on
+                  ? "border-electric bg-electric/15 text-electric"
+                  : "border-border/60 text-muted-foreground line-through opacity-60"
+              }`}
+            >
+              {s}
+            </button>
+          );
+        })}
+      </div>
+      {value.length === 0 && (
+        <p className="mt-2 text-[10px] text-amber-500">No sizes selected — the product will show every size.</p>
+      )}
+    </div>
+  );
+}
+
 function AdminPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, isHydrated, signOut } = useAuth();
@@ -112,6 +187,7 @@ function AdminPage() {
       "https://images.unsplash.com/photo-1519861297062-a1eec154f81a?auto=format&fit=crop&w=900&q=80",
     badge: "New",
     primaryColor: "#0a0a0a",
+    sizes: [...ALL_SIZES] as number[],
   });
 
   // Edit product modal
@@ -125,6 +201,7 @@ function AdminPage() {
     badge: "",
     image: "",
     primaryColor: "#0a0a0a",
+    sizes: [...ALL_SIZES] as number[],
     inStock: true,
   });
 
@@ -152,19 +229,7 @@ function AdminPage() {
       if (!prodRes.error && prodRes.data && prodRes.data.length > 0) {
         setCmsProducts(
           prodRes.data.map((p) => ({
-            id: p.id,
-            name: p.name,
-            brand: p.brand,
-            category: p.category as Product["category"],
-            price: Number(p.price),
-            originalPrice: p.original_price ? Number(p.original_price) : undefined,
-            rating: Number(p.rating ?? 4.8),
-            reviews: Number(p.reviews ?? 0),
-            image: p.image,
-            altImage: p.alt_image,
-            colors: p.colors ?? ["#0a0a0a"],
-            badge: p.badge ?? undefined,
-            inStock: Boolean(p.in_stock),
+            ...mapProductRow(p),
             likesCount: Number(p.likes_count ?? 0),
           })),
         );
@@ -304,10 +369,13 @@ function AdminPage() {
       colors: [newProduct.primaryColor || "#0a0a0a"],
       badge: newProduct.badge.trim() || undefined,
       inStock: true,
+      sizes: normalizeSizes(newProduct.sizes),
       likesCount: 0,
     };
 
-    const { error } = await supabase.from("products").insert({
+    const { error } = await writeWithSizesFallback(record.sizes, (sizesField) =>
+      supabase.from("products").insert({
+      ...sizesField,
       id: record.id,
       name: record.name,
       brand: record.brand,
@@ -322,7 +390,8 @@ function AdminPage() {
       badge: record.badge ?? null,
       in_stock: true,
       likes_count: 0,
-    });
+    }),
+    );
 
     if (error) {
       toast.error(`Supabase error: ${error.message}`);
@@ -330,6 +399,7 @@ function AdminPage() {
     }
 
     setCmsProducts((prev) => [record, ...prev]);
+    void loadCatalog(true);
     setNewProduct((prev) => ({ ...prev, name: "", originalPrice: "" }));
     setAddModalOpen(false);
     toast.success(`Published ${record.name} to catalog`);
@@ -346,6 +416,7 @@ function AdminPage() {
       badge: p.badge ?? "",
       image: p.image,
       primaryColor: p.colors[0] ?? "#0a0a0a",
+      sizes: p.sizes && p.sizes.length > 0 ? [...p.sizes] : [...ALL_SIZES],
       inStock: p.inStock,
     });
   };
@@ -356,10 +427,13 @@ function AdminPage() {
     const price = Number(editForm.price) || editingProduct.price;
     const originalPrice = editForm.originalPrice ? Number(editForm.originalPrice) : null;
     const primaryColor = editForm.primaryColor || "#0a0a0a";
+    const sizes = normalizeSizes(editForm.sizes);
 
-    const { error } = await supabase
+    const { error } = await writeWithSizesFallback(sizes, (sizesField) =>
+      supabase
       .from("products")
       .update({
+        ...sizesField,
         name: editForm.name.trim(),
         brand: editForm.brand.trim(),
         category: editForm.category,
@@ -370,7 +444,8 @@ function AdminPage() {
         colors: [primaryColor],
         in_stock: editForm.inStock,
       })
-      .eq("id", editingProduct.id);
+      .eq("id", editingProduct.id),
+    );
 
     if (error) {
       toast.error(`Update failed: ${error.message}`);
@@ -390,11 +465,13 @@ function AdminPage() {
               badge: editForm.badge.trim() || undefined,
               image: editForm.image.trim(),
               colors: [primaryColor],
+              sizes,
               inStock: editForm.inStock,
             }
           : p,
       ),
     );
+    void loadCatalog(true);
     setEditingProduct(null);
     toast.success(`Updated ${editForm.name.trim()}`);
   };
@@ -407,6 +484,7 @@ function AdminPage() {
       return;
     }
     setCmsProducts((prev) => prev.map((p) => (p.id === prod.id ? { ...p, inStock: next } : p)));
+    void loadCatalog(true);
     toast.success(`${prod.name} marked as ${next ? "In Stock" : "Sold Out"}`);
   };
 
@@ -417,6 +495,7 @@ function AdminPage() {
       return;
     }
     setCmsProducts((prev) => prev.filter((p) => p.id !== id));
+    void loadCatalog(true);
     toast.info(`Deleted ${name}`);
   };
 
@@ -1053,6 +1132,10 @@ function AdminPage() {
               value={newProduct.primaryColor}
               onChange={(primaryColor) => setNewProduct({ ...newProduct, primaryColor })}
             />
+            <SizePicker
+              value={newProduct.sizes}
+              onChange={(sizes) => setNewProduct({ ...newProduct, sizes })}
+            />
             <button
               type="submit"
               className="w-full rounded-full bg-gradient-to-r from-electric to-neon py-2.5 text-xs font-bold text-background"
@@ -1137,6 +1220,10 @@ function AdminPage() {
             <PrimaryColorWheel
               value={editForm.primaryColor}
               onChange={(primaryColor) => setEditForm({ ...editForm, primaryColor })}
+            />
+            <SizePicker
+              value={editForm.sizes}
+              onChange={(sizes) => setEditForm({ ...editForm, sizes })}
             />
             <label className="flex items-center gap-2 text-xs font-semibold">
               <input

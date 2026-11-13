@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 export type Product = {
   id: string;
   name: string;
@@ -12,6 +14,8 @@ export type Product = {
   colors: string[];
   badge?: string;
   inStock: boolean;
+  /** Available US sizes. Undefined = every size. */
+  sizes?: number[];
 };
 
 const IMG_NIKE_RUNNING =
@@ -395,5 +399,93 @@ export const categories = [
 ];
 
 export function getProduct(id: string) {
-  return products.find((p) => p.id === id);
+  return liveCatalog.find((p) => p.id === id);
+}
+
+/* ------------------------------------------------------------------ */
+/* Live catalog (Supabase `products` table, static list as fallback)   */
+/* ------------------------------------------------------------------ */
+
+export const ALL_SIZES = [7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 13];
+
+/** Sizes a product is available in. Products without a `sizes` list are available in every size. */
+export function getProductSizes(p: Product): number[] {
+  return p.sizes && p.sizes.length > 0 ? p.sizes : ALL_SIZES;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mapProductRow(row: any): Product {
+  return {
+    id: row.id,
+    name: row.name,
+    brand: row.brand,
+    category: row.category as Product["category"],
+    price: Number(row.price),
+    originalPrice: row.original_price != null ? Number(row.original_price) : undefined,
+    rating: Number(row.rating ?? 4.8),
+    reviews: Number(row.reviews ?? 0),
+    image: row.image,
+    altImage: row.alt_image || row.image,
+    colors: Array.isArray(row.colors) && row.colors.length > 0 ? row.colors : ["#0a0a0a"],
+    badge: row.badge ?? undefined,
+    inStock: Boolean(row.in_stock),
+    sizes:
+      Array.isArray(row.sizes) && row.sizes.length > 0 ? row.sizes.map(Number) : undefined,
+  };
+}
+
+let liveCatalog: Product[] = products;
+let loadPromise: Promise<void> | null = null;
+const catalogListeners = new Set<() => void>();
+
+function setCatalog(next: Product[]) {
+  liveCatalog = next;
+  catalogListeners.forEach((l) => l());
+}
+
+/** Fetch the catalog from Supabase (deduped). Pass `force` to refetch after admin edits. */
+export function loadCatalog(force = false): Promise<void> {
+  if (loadPromise && !force) return loadPromise;
+  loadPromise = (async () => {
+    const { supabase } = await import("./supabase");
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (!error && data && data.length > 0) {
+      setCatalog(data.map(mapProductRow));
+    }
+  })().catch(() => {
+    // keep static fallback on network errors
+  });
+  return loadPromise;
+}
+
+/** Fetch a single product (used by the product page loader for items not in the static list). */
+export async function fetchProductById(id: string): Promise<Product | undefined> {
+  const cached = getProduct(id);
+  if (cached) return cached;
+  try {
+    const { supabase } = await import("./supabase");
+    const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
+    if (error || !data) return undefined;
+    return mapProductRow(data);
+  } catch {
+    return undefined;
+  }
+}
+
+/** React hook returning the live product catalog. */
+export function useProducts(): Product[] {
+  const [list, setList] = useState<Product[]>(liveCatalog);
+  useEffect(() => {
+    const sync = () => setList(liveCatalog);
+    catalogListeners.add(sync);
+    sync();
+    void loadCatalog();
+    return () => {
+      catalogListeners.delete(sync);
+    };
+  }, []);
+  return list;
 }

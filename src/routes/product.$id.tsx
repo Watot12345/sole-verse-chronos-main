@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Heart,
@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   MessageSquarePlus,
 } from "lucide-react";
-import { getProduct, products, type Product } from "@/lib/products";
+import { fetchProductById, getProductSizes, useProducts, type Product } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 import { useCart } from "@/lib/cart-store";
 import { useCurrency } from "@/lib/currency-store";
@@ -32,8 +32,8 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/product/$id")({
-  loader: ({ params }) => {
-    const product = getProduct(params.id);
+  loader: async ({ params }) => {
+    const product = await fetchProductById(params.id);
     if (!product) throw notFound();
     return { product };
   },
@@ -108,12 +108,22 @@ const INITIAL_REVIEWS: CustomerReview[] = [
 ];
 
 function ProductPage() {
-  const { product } = Route.useLoaderData();
+  const { product: loadedProduct } = Route.useLoaderData();
+  const catalog = useProducts();
+  // Prefer the live catalog copy so admin edits show without a full reload
+  const product = catalog.find((p) => p.id === loadedProduct.id) ?? loadedProduct;
+  const productSizes = getProductSizes(product);
   const { format, convert } = useCurrency();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { add } = useCart();
 
   const [selectedUSSize, setSelectedUSSize] = useState<number | null>(9.5);
+  useEffect(() => {
+    if (selectedUSSize !== null && !productSizes.includes(selectedUSSize)) {
+      setSelectedUSSize(productSizes[0] ?? null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id, productSizes.join(",")]);
   const [sizeSystem, setSizeSystem] = useState<SizeSystem>("US");
   const [qty, setQty] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -359,6 +369,7 @@ function ProductPage() {
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {SIZING_CHART.map((s) => {
                 const isSelected = selectedUSSize === s.us;
+                const available = s.inStock && productSizes.includes(s.us);
                 const label =
                   sizeSystem === "US"
                     ? `${s.us}`
@@ -371,12 +382,12 @@ function ProductPage() {
                 return (
                   <button
                     key={s.us}
-                    onClick={() => s.inStock && setSelectedUSSize(s.us)}
-                    disabled={!s.inStock}
+                    onClick={() => available && setSelectedUSSize(s.us)}
+                    disabled={!available}
                     className={`relative rounded-xl border p-2.5 text-center transition-all ${
                       isSelected
                         ? "border-electric bg-electric/15 text-electric font-bold shadow-md ring-1 ring-electric"
-                        : s.inStock
+                        : available
                           ? "border-border/80 text-foreground hover:border-foreground/50 hover:bg-secondary/40"
                           : "border-border/40 text-muted-foreground opacity-40 cursor-not-allowed line-through"
                     }`}
@@ -385,7 +396,7 @@ function ProductPage() {
                     <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">
                       {sizeSystem}
                     </span>
-                    {s.inStock && s.stockCount <= 3 && (
+                    {available && s.stockCount <= 3 && (
                       <span className="absolute -top-1.5 -right-1 rounded-full bg-amber-500 px-1 text-[8px] font-black text-black">
                         {s.stockCount} left
                       </span>
@@ -636,7 +647,7 @@ function ProductPage() {
       <section className="mt-20 md:mt-28">
         <h2 className="mb-8 font-display text-2xl sm:text-3xl font-bold">You might also like</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products
+          {catalog
             .filter((p) => p.id !== product.id)
             .slice(0, 4)
             .map((p, i) => (

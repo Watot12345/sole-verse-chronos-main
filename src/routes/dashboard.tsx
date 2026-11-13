@@ -20,7 +20,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth, type OrderRecord } from "@/lib/auth-store";
-import { products, getProduct } from "@/lib/products";
+import { products, getProduct, useProducts } from "@/lib/products";
 import { useWishlist } from "@/lib/wishlist-store";
 import { useCart } from "@/lib/cart-store";
 import { useCurrency } from "@/lib/currency-store";
@@ -105,6 +105,7 @@ const INITIAL_ORDERS: OrderItem[] = [
 ];
 
 function Dashboard() {
+  const liveProducts = useProducts();
   const navigate = useNavigate();
   const { user, isAuthenticated, isHydrated, orders, signOut, updateProfile } = useAuth();
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("orders");
@@ -551,7 +552,7 @@ function Dashboard() {
             <div className="space-y-4">
               <h2 className="font-display text-lg font-bold">Recently Viewed Silhouettes</h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {products.slice(0, 4).map((p) => (
+                {liveProducts.slice(0, 4).map((p) => (
                   <Link
                     to="/product/$id"
                     params={{ id: p.id }}

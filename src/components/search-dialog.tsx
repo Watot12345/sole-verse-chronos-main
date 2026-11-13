@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Search, X, Sparkles, ArrowRight, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { products } from "@/lib/products";
+import { useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
 
 interface SearchDialogProps {
@@ -11,6 +11,7 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
+  const products = useProducts();
   const [query, setQuery] = useState("");
   const { format } = useCurrency();
 

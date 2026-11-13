@@ -2,12 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/lib/cart-store";
-import { getProduct } from "@/lib/products";
+import { getProduct, useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
 
 const FREE_SHIPPING_THRESHOLD_USD = 150;
 
 export function CartDrawer() {
+  useProducts(); // re-render when the live catalog loads
   const { items, isDrawerOpen, closeCart, update, remove } = useCart();
   const { format, convert } = useCurrency();
 

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/lib/cart-store";
-import { getProduct } from "@/lib/products";
+import { getProduct, useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
 import { toast } from "sonner";
 
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/cart")({
 const FREE_SHIPPING_THRESHOLD_USD = 150;
 
 function CartPage() {
+  useProducts(); // re-render when the live catalog loads
   const { items, update, remove, clear } = useCart();
   const { format, convert } = useCurrency();
   const [coupon, setCoupon] = useState("");
