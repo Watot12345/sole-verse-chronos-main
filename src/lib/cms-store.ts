@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "./supabase";
 
+export interface PromoCode {
+  code: string;
+  discountPercent: number;
+  active: boolean;
+}
+
 export interface StorefrontContent {
   heroBadge: string;
   heroTitleLine1: string;
@@ -9,6 +15,7 @@ export interface StorefrontContent {
   heroSubtitle: string;
   freeShippingThresholdUSD: number;
   promoBannerText: string;
+  promoCodes: PromoCode[];
 }
 
 export const DEFAULT_CMS_CONTENT: StorefrontContent = {
@@ -18,6 +25,10 @@ export const DEFAULT_CMS_CONTENT: StorefrontContent = {
   heroSubtitle: "Premium sneakers engineered for performance, comfort, and modern lifestyle.",
   freeShippingThresholdUSD: 150,
   promoBannerText: "Free Express Worldwide Shipping on orders over $150 · Use code VERSE10 for 10% off",
+  promoCodes: [
+    { code: "VERSE10", discountPercent: 10, active: true },
+    { code: "CHRONOS20", discountPercent: 20, active: true },
+  ],
 };
 
 /** Row id in `public.site_content` holding the storefront copy. */

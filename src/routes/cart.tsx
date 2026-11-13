@@ -14,6 +14,7 @@ import { useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import { getProduct, useProducts } from "@/lib/products";
 import { useCurrency } from "@/lib/currency-store";
+import { useCmsContent } from "@/lib/cms-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cart")({
@@ -29,41 +30,42 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
-const FREE_SHIPPING_THRESHOLD_USD = 150;
-
 function CartPage() {
   useProducts(); // re-render when the live catalog loads
   const { items, update, remove, clear } = useCart();
   const { format, convert } = useCurrency();
+  const { content } = useCmsContent();
   const [coupon, setCoupon] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
   const [freeShippingApplied, setFreeShippingApplied] = useState(false);
 
+  const freeShippingThresholdUSD = content.freeShippingThresholdUSD || 150;
   const lines = items.map((i) => ({ ...i, product: getProduct(i.id) })).filter((l) => l.product);
 
   const subtotalUSD = lines.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
   const discountUSD = subtotalUSD * discountPercent;
   const standardShippingUSD =
-    subtotalUSD >= FREE_SHIPPING_THRESHOLD_USD || subtotalUSD === 0 || freeShippingApplied ? 0 : 12;
+    subtotalUSD >= freeShippingThresholdUSD || subtotalUSD === 0 || freeShippingApplied ? 0 : 12;
   const estimatedTaxUSD = +(subtotalUSD * 0.08).toFixed(2);
   const totalUSD = Math.max(0, subtotalUSD - discountUSD + standardShippingUSD + estimatedTaxUSD);
 
-  const progressPercent = Math.min(100, (subtotalUSD / FREE_SHIPPING_THRESHOLD_USD) * 100);
-  const remainingUSD = Math.max(0, FREE_SHIPPING_THRESHOLD_USD - subtotalUSD);
+  const progressPercent = Math.min(100, (subtotalUSD / freeShippingThresholdUSD) * 100);
+  const remainingUSD = Math.max(0, freeShippingThresholdUSD - subtotalUSD);
 
   function applyCoupon() {
     const code = coupon.trim().toUpperCase();
-    if (code === "VERSE10") {
-      setDiscountPercent(0.1);
-      toast.success("Coupon 'VERSE10' applied: 10% discount added!");
-    } else if (code === "CHRONOS20") {
-      setDiscountPercent(0.2);
-      toast.success("VIP Coupon 'CHRONOS20' applied: 20% discount added!");
+    const matched = (content.promoCodes ?? []).find(
+      (p) => p.active && p.code.trim().toUpperCase() === code,
+    );
+    if (matched) {
+      setDiscountPercent(matched.discountPercent / 100);
+      toast.success(`Coupon '${matched.code}' applied: ${matched.discountPercent}% discount added!`);
     } else if (code === "GLOBALFREE") {
       setFreeShippingApplied(true);
       toast.success("Coupon 'GLOBALFREE' applied: Free international shipping unlocked!");
     } else {
-      toast.error("Invalid coupon code. Try VERSE10 or CHRONOS20.");
+      const firstActive = (content.promoCodes ?? []).find((p) => p.active)?.code ?? "VERSE10";
+      toast.error(`Invalid or inactive coupon code. Try ${firstActive}.`);
     }
   }
 
