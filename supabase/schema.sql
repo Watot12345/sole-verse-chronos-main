@@ -18,23 +18,36 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- Helper function (SECURITY DEFINER avoids RLS infinite recursion on profiles)
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Admins can view all profiles" on public.profiles;
 create policy "Admins can view all profiles"
   on public.profiles for select
-  using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (public.is_admin());
 
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile"
   on public.profiles for insert
   with check (auth.uid() = id);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update
   using (auth.uid() = id);
@@ -60,18 +73,15 @@ create table if not exists public.products (
 
 alter table public.products enable row level security;
 
+drop policy if exists "Anyone can view products" on public.products;
 create policy "Anyone can view products"
   on public.products for select
   using (true);
 
+drop policy if exists "Admins can manage products" on public.products;
 create policy "Admins can manage products"
   on public.products for all
-  using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (public.is_admin());
 
 -- 3. Product Likes (guest + member likes)
 create table if not exists public.product_likes (
@@ -85,14 +95,17 @@ create table if not exists public.product_likes (
 
 alter table public.product_likes enable row level security;
 
+drop policy if exists "Anyone can view likes" on public.product_likes;
 create policy "Anyone can view likes"
   on public.product_likes for select
   using (true);
 
+drop policy if exists "Anyone can like products" on public.product_likes;
 create policy "Anyone can like products"
   on public.product_likes for insert
   with check (true);
 
+drop policy if exists "Anyone can unlike own visitor like" on public.product_likes;
 create policy "Anyone can unlike own visitor like"
   on public.product_likes for delete
   using (true);
@@ -117,31 +130,25 @@ create table if not exists public.orders (
 
 alter table public.orders enable row level security;
 
+drop policy if exists "Users can view own orders" on public.orders;
 create policy "Users can view own orders"
   on public.orders for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can create own orders" on public.orders;
 create policy "Users can create own orders"
   on public.orders for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Admins can view all orders" on public.orders;
 create policy "Admins can view all orders"
   on public.orders for select
-  using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (public.is_admin());
 
+drop policy if exists "Admins can update all orders" on public.orders;
 create policy "Admins can update all orders"
   on public.orders for update
-  using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  using (public.is_admin());
 
 -- 5. Seed initial 16 sneakers
 insert into public.products (id, name, brand, category, price, original_price, rating, reviews, image, alt_image, colors, badge, in_stock, likes_count) values
