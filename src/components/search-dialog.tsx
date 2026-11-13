@@ -61,9 +61,6 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               <X className="h-4 w-4" />
             </button>
           )}
-          <span className="hidden sm:inline-block rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground ml-2">
-            ESC
-          </span>
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-4">
